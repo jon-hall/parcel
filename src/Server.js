@@ -4,9 +4,33 @@ const serveStatic = require('serve-static');
 const getPort = require('get-port');
 const serverErrors = require('./utils/customErrors').serverErrors;
 const generateCertificate = require('./utils/generateCertificate');
+const logger = require('./Logger');
+
+serveStatic.mime.define({
+  'application/wasm': ['wasm']
+});
+
+function setHeaders(res) {
+  enableCors(res);
+}
+
+function enableCors(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, HEAD, PUT, PATCH, POST, DELETE'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Content-Type'
+  );
+}
 
 function middleware(bundler) {
-  const serve = serveStatic(bundler.options.outDir, {index: false});
+  const serve = serveStatic(bundler.options.outDir, {
+    index: false,
+    setHeaders: setHeaders
+  });
 
   return function(req, res, next) {
     // Wait for the bundler to finish bundling if needed
@@ -67,21 +91,21 @@ async function serve(bundler, port, useHTTPS = false) {
 
   return new Promise((resolve, reject) => {
     server.on('error', err => {
-      bundler.logger.error(new Error(serverErrors(err, server.address().port)));
+      logger.error(new Error(serverErrors(err, server.address().port)));
       reject(err);
     });
 
     server.once('listening', () => {
       let addon =
         server.address().port !== port
-          ? `- ${bundler.logger.chalk.red(
+          ? `- ${logger.chalk.yellow(
               `configured port ${port} could not be used.`
             )}`
           : '';
 
-      bundler.logger.persistent(
-        `Server running at ${bundler.logger.chalk.cyan(
-          `${https ? 'https' : 'http'}://localhost:${server.address().port}`
+      logger.persistent(
+        `Server running at ${logger.chalk.cyan(
+          `${useHTTPS ? 'https' : 'http'}://localhost:${server.address().port}`
         )} ${addon}`
       );
 

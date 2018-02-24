@@ -1,7 +1,7 @@
 const CSSAsset = require('./CSSAsset');
-const config = require('../utils/config');
 const localRequire = require('../utils/localRequire');
 const Resolver = require('../Resolver');
+const syncPromise = require('../utils/syncPromise');
 
 const URL_RE = /^(?:url\s*\(\s*)?['"]?(?:[#/]|(?:https?:)?\/\/)/i;
 
@@ -11,7 +11,7 @@ class StylusAsset extends CSSAsset {
     let stylus = await localRequire('stylus', this.name);
     let opts =
       this.package.stylus ||
-      (await config.load(this.name, ['.stylusrc', '.stylusrc.js']));
+      (await this.getConfig(['.stylusrc', '.stylusrc.js']));
     let style = stylus(code, opts);
     style.set('filename', this.name);
     style.set('include css', true);
@@ -58,7 +58,9 @@ async function createEvaluator(asset) {
           // First try resolving using the node require resolution algorithm.
           // This allows stylus files in node_modules to be resolved properly.
           // If we find something, update the AST so stylus gets the absolute path to load later.
-          node.string = resolver.resolveSync(path, imported.filename).path;
+          node.string = syncPromise(
+            resolver.resolve(path, imported.filename)
+          ).path;
           asset.addDependency(node.string, {includedInParent: true});
         } catch (err) {
           // If we couldn't resolve, try the normal stylus resolver.
