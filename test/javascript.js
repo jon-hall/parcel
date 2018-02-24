@@ -711,4 +711,12 @@ describe('javascript', function() {
 
     assert.deepEqual(output, err);
   });
+
+  it('should expose to CommonJS entry point', async function() {
+    let b = await bundle(__dirname + '/integration/commonjs-entry/index.js');
+
+    delete require.cache[require.resolve(b.name)];
+    const test = require(b.name);
+    assert.equal(test(), 'Test!');
+  });
 });
