@@ -46,7 +46,7 @@ require = (function (modules, cache, entry) {
 
       // Expose the exports if we are on the entry point by using the
       // previous defined module.
-      if (previousModule && name === 1) {
+      if (previousModule && name === entry[entry.length - 1]) {
         previousModule.exports = module.exports;
       }
     }
