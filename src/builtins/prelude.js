@@ -44,10 +44,32 @@ require = (function (modules, cache, entry) {
 
       modules[name][0].call(module.exports, localRequire, module, module.exports);
 
-      // Expose the exports if we are on the entry point by using the
-      // previous defined module.
-      if (previousModule && name === entry[entry.length - 1]) {
-        previousModule.exports = module.exports;
+      // Are we the entry point?
+      if (name === entry[entry.length - 1]) {
+        // If so, expose using UMD wrapper
+        (function (f) {
+          if (previousModule && typeof previousModule.exports == 'object') {
+            previousModule.exports = f();
+          } else if (typeof define === 'function' && define.amd) { // eslint-disable-line no-undef
+            // eslint-disable-next-line no-undef
+            define(f);
+          } else {
+            var g;
+            if (typeof window !== 'undefined') {
+              g = window;
+            } else if (typeof global !== 'undefined') {
+              g = global;
+            } else if (typeof self !== 'undefined') {
+              g = self;
+            } else {
+              g = this;
+            }
+
+            g.commonJsModule = f();
+          }
+        })(function () {
+          return module.exports;
+        });
       }
     }
 
