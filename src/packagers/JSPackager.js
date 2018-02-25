@@ -22,15 +22,6 @@ class JSPackager extends Packager {
     this.externalModules = new Set();
 
     let preludeCode = this.options.minify ? prelude.minified : prelude.source;
-
-    if (this.options.browserGlobal) {
-      preludeCode = preludeCode.replace(
-        /\/\/ BROWSER-GLOBAL-CODE/g,
-        'root.' + this.options.browserGlobal + ' = module.exports;'
-      );
-    } else {
-      preludeCode = preludeCode.replace(/\/\/ BROWSER-GLOBAL-CODE/g, '');
-    }
     if (this.options.target === 'electron') {
       preludeCode =
         `process.env.HMR_PORT=${
@@ -207,7 +198,13 @@ class JSPackager extends Packager {
       entry.push(this.bundle.entryAsset.id);
     }
 
-    await this.dest.write('},{},' + JSON.stringify(entry) + ')');
+    await this.dest.write(
+      '},{},' +
+        JSON.stringify(entry) +
+        ', ' +
+        JSON.stringify(this.options.browserGlobal || null) +
+        ')'
+    );
     if (this.options.sourceMaps) {
       // Add source map url
       await this.dest.write(

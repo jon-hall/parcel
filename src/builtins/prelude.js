@@ -7,7 +7,7 @@
 // orig method which is the require for previous bundles
 
 // eslint-disable-next-line no-global-assign
-require = (function (modules, cache, entry) {
+require = (function (modules, cache, entry, browserGlobal) {
   // Save the require from previous bundle to this closure if any
   var previousRequire = typeof require === "function" && require;
 
@@ -52,13 +52,15 @@ require = (function (modules, cache, entry) {
         (function (root) {
           if (typeof define === 'function' && define.amd) {
             define(function () {
-              // BROWSER-GLOBAL-CODE
+              if (browserGlobal) {
+                window[browserGlobal] = module.exports;
+              }
               return module.exports;
             });
           } else if (typeof previousModule === 'object' && previousModule.exports) {
             previousModule.exports = module.exports;
           } else {
-            // BROWSER-GLOBAL-CODE
+            window[browserGlobal] = module.exports;
           }
         })(typeof self !== 'undefined' ? self : this);
       }
