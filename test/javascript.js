@@ -741,3 +741,17 @@ describe('javascript', function() {
     assert.equal(ctx.window.testing(), 'Test!');
   });
 });
+
+it('should expose same variable with --browser-global and RequireJS', async function() {
+  let b = await bundle(__dirname + '/integration/entry-point/index.js', {
+    browserGlobal: 'testing'
+  });
+  let test;
+  const mockDefine = function(f) {
+    test = f();
+  };
+  mockDefine.amd = true;
+
+  const ctx = run(b, {define: mockDefine}, {require: false});
+  assert.equal(ctx.window.testing, test);
+});
