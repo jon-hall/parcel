@@ -48,19 +48,18 @@ require = (function (modules, cache, entry, browserGlobal) {
         // Expose entry point to Node, AMD or browser globals
         // Based on https://github.com/umdjs/umd/blob/master/templates/returnExportsGlobal.js
         /* global define */
-        // eslint-disable-next-line no-unused-vars
         (function (root) {
           if (typeof define === 'function' && define.amd) {
             define(function () {
               if (browserGlobal) {
-                window[browserGlobal] = module.exports;
+                root[browserGlobal] = module.exports;
               }
               return module.exports;
             });
           } else if (typeof previousModule === 'object' && previousModule.exports) {
             previousModule.exports = module.exports;
           } else {
-            window[browserGlobal] = module.exports;
+            root[browserGlobal] = module.exports;
           }
         })(typeof self !== 'undefined' ? self : this);
       }
