@@ -44,32 +44,23 @@ require = (function (modules, cache, entry) {
 
       modules[name][0].call(module.exports, localRequire, module, module.exports);
 
-      // Are we the entry point?
       if (name === entry[entry.length - 1]) {
-        // If so, expose using UMD wrapper
-        (function (f) {
-          if (previousModule && typeof previousModule.exports == 'object') {
-            previousModule.exports = f();
-          } else if (typeof define === 'function' && define.amd) { // eslint-disable-line no-undef
-            // eslint-disable-next-line no-undef
-            define(f);
+        // Expose entry point to Node, AMD or browser globals
+        // Based on https://github.com/umdjs/umd/blob/master/templates/returnExportsGlobal.js
+        /* global define */
+        // eslint-disable-next-line no-unused-vars
+        (function (root) {
+          if (typeof define === 'function' && define.amd) {
+            define(function () {
+              // BROWSER-GLOBAL-CODE
+              return module.exports;
+            });
+          } else if (typeof previousModule === 'object' && previousModule.exports) {
+            previousModule.exports = module.exports;
           } else {
-            var g;
-            if (typeof window !== 'undefined') {
-              g = window;
-            } else if (typeof global !== 'undefined') {
-              g = global;
-            } else if (typeof self !== 'undefined') {
-              g = self;
-            } else {
-              g = this;
-            }
-
-            g.commonJsModule = f();
+            // BROWSER-GLOBAL-CODE
           }
-        })(function () {
-          return module.exports;
-        });
+        })(typeof self !== 'undefined' ? self : this);
       }
     }
 
