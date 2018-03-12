@@ -11,9 +11,10 @@ require = (function (modules, cache, entry, browserGlobal) {
   // Save the require from previous bundle to this closure if any
   var previousRequire = typeof require === "function" && require;
 
-  function newRequire(name, jumped, hmrBundle) {
   // Save the module from previous module or Node.js if any
   var previousModule = typeof module === 'object' && module;
+
+  function newRequire(name, jumped, hmrBundle) {
 
     if (!cache[name]) {
       if (!modules[name]) {

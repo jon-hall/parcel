@@ -8,12 +8,7 @@
     "type": "git",
     "url": "https://github.com/parcel-bundler/parcel.git"
   },
-  "files": [
-    "bin/",
-    "lib/",
-    "src/",
-    "index.js"
-  ],
+  "files": ["bin/", "lib/", "src/", "index.js"],
   "dependencies": {
     "babel-cli": "^6.26.0",
     "babel-code-frame": "^6.26.0",
@@ -69,7 +64,7 @@
     "tomlify-j0.4": "^3.0.0",
     "uglify-es": "^3.2.1",
     "v8-compile-cache": "^1.1.0",
-    "vue-component-compiler": "github:shawwn/vue-component-compiler#parcel-vue-component-compiler",
+    "vue-component-compiler": "3.0.0",
     "worker-farm": "^1.5.2",
     "ws": "^4.0.0"
   },
@@ -113,12 +108,15 @@
     "report-coverage": "nyc report --reporter=lcov && codecov",
     "test-ci": "yarn test-coverage && yarn report-coverage",
     "format": "prettier --write './{src,bin,test}/**/*.{js,json,md}'",
-    "build": "yarn minify && babel --no-babelrc --presets env --plugins transform-runtime --ignore builtins src -d lib && ncp src/builtins lib/builtins",
+    "build":
+      "yarn minify && babel --no-babelrc --presets env --plugins transform-runtime --ignore builtins src -d lib && ncp src/builtins lib/builtins",
     "prepare": "yarn build",
-    "minify": "uglifyjs -c -m -o src/builtins/prelude.min.js src/builtins/prelude.js",
+    "minify":
+      "uglifyjs -c -m -o src/builtins/prelude.min.js src/builtins/prelude.js",
     "precommit": "npm run lint && lint-staged",
     "lint": "eslint .",
-    "postinstall": "node -e \"console.log('\\u001b[35m\\u001b[1mLove Parcel? You can now donate to our open collective:\\u001b[22m\\u001b[39m\\n > \\u001b[34mhttps://opencollective.com/parcel/donate\\u001b[0m')\""
+    "postinstall":
+      "node -e \"console.log('\\u001b[35m\\u001b[1mLove Parcel? You can now donate to our open collective:\\u001b[22m\\u001b[39m\\n > \\u001b[34mhttps://opencollective.com/parcel/donate\\u001b[0m')\""
   },
   "bin": {
     "parcel": "bin/cli.js"
@@ -127,10 +125,7 @@
     "node": ">= 6.0.0"
   },
   "lint-staged": {
-    "*.{js,json,md}": [
-      "prettier --write",
-      "git add"
-    ]
+    "*.{js,json,md}": ["prettier --write", "git add"]
   },
   "collective": {
     "type": "opencollective",
