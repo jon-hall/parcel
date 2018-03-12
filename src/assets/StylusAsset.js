@@ -7,9 +7,7 @@ const URL_RE = /^(?:url\s*\(\s*)?['"]?(?:[#/]|(?:https?:)?\/\/)/i;
 
 class StylusAsset extends CSSAsset {
   async install() {
-    return [...await super.install(),
-      {name: 'stylus', dev: true},
-    ];
+    return [...(await super.install()), {name: 'stylus', dev: true}];
   }
   async parse(code) {
     // stylus should be installed locally in the module that's being required
@@ -63,9 +61,11 @@ async function createEvaluator(asset) {
           // First try resolving using the node require resolution algorithm.
           // This allows stylus files in node_modules to be resolved properly.
           // If we find something, update the AST so stylus gets the absolute path to load later.
-          node.string = syncPromise(
-            resolver.resolve(path, imported.filename)
-          ).path;
+          node.string = syncPromise(resolver.resolve(path, imported.filename))
+            .path// support folder imports by removing the trailing 'index.js' that
+            // can be added by the node resolver in some scenarios
+            .replace(/index\.js$/, '');
+
           asset.addDependency(node.string, {includedInParent: true});
         } catch (err) {
           // If we couldn't resolve, try the normal stylus resolver.

@@ -89,6 +89,7 @@ function assertRenderFn(options, template) {
   let str = options.render.toString();
   let str2 = transpile('function render() {' + compiled.render + '}');
   str = str
+    .replace(/function [a-z_]+/g, 'function ')
     .replace(/\n[ ]+/g, '')
     .replace(/\n/g, '')
     .replace(/[ ]+/g, '')
@@ -160,21 +161,27 @@ describe('vue', function() {
     const style = fs
       .readFileSync(window.document.querySelector('link').href)
       .toString();
-    expect(style).to.contain('.test[' + id + '] {\n  color: yellow;\n}');
+
+    const eol = require('os').EOL;
     expect(style).to.contain(
-      '.test[' + id + "]:after {\n  content: 'bye!';\n}"
+      '.test[' + id + '] {' + eol + '  color: yellow;\n}'
     );
-    expect(style).to.contain('h1[' + id + '] {\n  color: green;\n}');
+    expect(style).to.contain(
+      '.test[' + id + ']:after {' + eol + "  content: 'bye!';\n}"
+    );
+    expect(style).to.contain('h1[' + id + '] {' + eol + '  color: green;\n}');
   });
 
   test('media-query', window => {
     const style = fs
       .readFileSync(window.document.querySelector('link').href)
       .toString();
+    const eol = require('os').EOL;
+
     var id =
       'data-v-' + genId(require.resolve('./integration/vue/media-query.vue'));
     expect(style).to.contain(
-      '@media print {\n.foo[' + id + '] {\n    color: #000;\n}\n}'
+      '@media print {\n.foo[' + id + '] {' + eol + '    color: #000;\n}\n}'
     );
   });
 });
