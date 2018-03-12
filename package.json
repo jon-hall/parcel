@@ -10,12 +10,15 @@
   },
   "files": ["bin/", "lib/", "src/", "index.js"],
   "dependencies": {
+    "babel-cli": "^6.26.0",
     "babel-code-frame": "^6.26.0",
     "babel-core": "^6.25.0",
     "babel-generator": "^6.25.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
     "babel-plugin-transform-react-jsx": "^6.24.1",
+    "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.1",
+    "babel-runtime": "^6.26.0",
     "babel-template": "^6.26.0",
     "babel-traverse": "^6.26.0",
     "babel-types": "^6.26.0",
@@ -40,6 +43,7 @@
     "json5": "^0.5.1",
     "micromatch": "^3.0.4",
     "mkdirp": "^0.5.1",
+    "ncp": "^2.0.0",
     "node-forge": "^0.7.1",
     "node-libs-browser": "^2.0.0",
     "opn": "^5.1.0",
@@ -59,6 +63,8 @@
     "tomlify-j0.4": "^3.0.0",
     "uglify-es": "^3.2.1",
     "v8-compile-cache": "^1.1.0",
+    "vue-component-compiler":
+      "https://github.com/shawwn/vue-component-compiler#parcel-vue-component-compiler",
     "worker-farm": "^1.5.2",
     "ws": "^4.0.0"
   },
@@ -67,6 +73,7 @@
     "babel-plugin-transform-async-super": "^1.0.0",
     "babel-register": "^6.26.0",
     "bsb-js": "^1.0.1",
+    "chai": "^4.1.2",
     "codecov": "^3.0.0",
     "coffeescript": "^2.0.3",
     "cross-env": "^5.1.1",
@@ -74,10 +81,10 @@
     "graphql": "^0.11.7",
     "graphql-tag": "^2.6.0",
     "husky": "^0.14.3",
+    "jsdom": "^11.5.1",
     "less": "^3.0.1",
     "lint-staged": "^6.0.0",
     "mocha": "^3.5.0",
-    "ncp": "^2.0.0",
     "nib": "^1.1.2",
     "node-sass": "^4.7.2",
     "nyc": "^11.1.0",
@@ -88,7 +95,12 @@
     "sinon": "^4.2.2",
     "sourcemap-validator": "^1.0.6",
     "stylus": "^0.54.5",
-    "typescript": "^2.6.2"
+    "typescript": "^2.6.2",
+    "vue": "^2.5.13",
+    "vue-router": "^3.0.1",
+    "vue-template-compiler": "^2.5.13",
+    "vuex": "^3.0.1",
+    "vuex-router-sync": "^5.0.0"
   },
   "scripts": {
     "test": "cross-env NODE_ENV=test mocha",
@@ -96,8 +108,9 @@
     "report-coverage": "nyc report --reporter=lcov && codecov",
     "test-ci": "yarn test-coverage && yarn report-coverage",
     "format": "prettier --write './{src,bin,test}/**/*.{js,json,md}'",
-    "build": "yarn minify && babel src -d lib && ncp src/builtins lib/builtins",
-    "prepublish": "yarn build",
+    "build":
+      "yarn minify && babel --no-babelrc --presets env --plugins transform-runtime --ignore builtins src -d lib && ncp src/builtins lib/builtins",
+    "prepare": "yarn build",
     "minify":
       "uglifyjs -c -m -o src/builtins/prelude.min.js src/builtins/prelude.js",
     "precommit": "npm run lint && lint-staged",

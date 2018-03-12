@@ -26,7 +26,7 @@ class Asset {
     this.type = path.extname(this.name).slice(1);
 
     this.processed = false;
-    this.contents = null;
+    this.contents = options ? options.contents : null;
     this.ast = null;
     this.generated = null;
     this.hash = null;
@@ -67,7 +67,10 @@ class Asset {
   }
 
   addDependency(name, opts) {
-    this.dependencies.set(name, Object.assign({name}, opts));
+    this.dependencies.set(
+      name,
+      Object.assign(this.dependencies.get(name) || {}, {name}, opts)
+    );
   }
 
   addURLDependency(url, from = this.name, opts) {
@@ -141,6 +144,10 @@ class Asset {
     };
   }
 
+  async install() {
+    return [];
+  }
+
   async process() {
     if (!this.generated) {
       await this.loadIfNeeded();
@@ -160,7 +167,7 @@ class Asset {
 
   invalidate() {
     this.processed = false;
-    this.contents = null;
+    this.contents = this.options ? this.options.contents : null;
     this.ast = null;
     this.generated = null;
     this.hash = null;

@@ -14,4 +14,8 @@ exports.exists = function(filename) {
   });
 };
 
+exports.existsSync = function(filename, ...args) {
+  return fs.existsSync(filename, ...args);
+};
+
 exports.mkdirp = promisify(mkdirp);

@@ -11,10 +11,10 @@ exports.init = function(options, callback) {
   callback();
 };
 
-exports.run = async function(path, pkg, options, isWarmUp, callback) {
+exports.run = async function(path, contents, pkg, options, isWarmUp, callback) {
   try {
     options.isWarmUp = isWarmUp;
-    var asset = parser.getAsset(path, pkg, options);
+    var asset = parser.getAsset(path, pkg, options, contents);
     await asset.process();
 
     callback(null, {
