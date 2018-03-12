@@ -12,6 +12,7 @@ const {EventEmitter} = require('events');
 const logger = require('./Logger');
 const PackagerRegistry = require('./packagers');
 const localRequire = require('./utils/localRequire');
+const localResolve = localRequire.localResolve;
 const config = require('./utils/config');
 const emoji = require('./utils/emoji');
 const loadEnv = require('./utils/env');
@@ -96,7 +97,8 @@ class Bundler extends EventEmitter {
       hmrHostname:
         options.hmrHostname ||
         (options.target === 'electron' ? 'localhost' : ''),
-      detailedReport: options.detailedReport || false
+      detailedReport: options.detailedReport || false,
+      browserGlobal: options.browserGlobal
     };
   }
 
@@ -384,12 +386,26 @@ class Bundler extends EventEmitter {
 
     // Mark the asset processed so we don't load it twice
     asset.processed = true;
+    let installDeps = await asset.install();
+
+    this.installed = this.installed || new Set();
+    for (let dep of installDeps) {
+      if (!this.installed.has(dep.name)) {
+        this.installed.add(dep.name);
+        await localResolve(dep.name, asset.name);
+      }
+    }
 
     // First try the cache, otherwise load and compile in the background
     let startTime = Date.now();
     let processed = this.cache && (await this.cache.read(asset.name));
     if (!processed || asset.shouldInvalidate(processed.cacheData)) {
-      processed = await this.farm.run(asset.name, asset.contents, asset.package, this.options);
+      processed = await this.farm.run(
+        asset.name,
+        asset.contents,
+        asset.package,
+        this.options
+      );
       if (this.cache) {
         this.cache.write(asset.name, processed);
       }
@@ -408,20 +424,13 @@ class Bundler extends EventEmitter {
       }
     }
 
-    let seen = new Set();
-    for (let dep of dependencies) {
-      if (dep.install && !seen.has(dep.name+':'+asset.name)) {
-        seen = seen.add(dep.name+':'+asset.name);
-        let res = await localResolve(dep.name, asset.name);
-        res = res;
-      }
-    }
-
     // Resolve and load asset dependencies
     let assetDeps = await Promise.all(
       dependencies.map(async dep => {
         if (dep.contents != null) {
-          let assetDep = this.loadedAssets.get(dep.name) || this.parser.getAsset(dep.name, null, this.options, dep.contents);
+          let assetDep =
+            this.loadedAssets.get(dep.name) ||
+            this.parser.getAsset(dep.name, null, this.options, dep.contents);
           this.loadedAssets.set(dep.name, assetDep);
           this.watch(dep.name, assetDep);
           if (assetDep.contents != dep.contents) {

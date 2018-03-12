@@ -711,4 +711,47 @@ describe('javascript', function() {
 
     assert.deepEqual(output, err);
   });
+
+  it('should expose to CommonJS entry point', async function() {
+    let b = await bundle(__dirname + '/integration/entry-point/index.js');
+
+    delete require.cache[require.resolve(b.name)];
+    const test = require(b.name);
+    assert.equal(test(), 'Test!');
+  });
+
+  it('should expose to RequireJS entry point', async function() {
+    let b = await bundle(__dirname + '/integration/entry-point/index.js');
+    let test;
+    const mockDefine = function(f) {
+      test = f();
+    };
+    mockDefine.amd = true;
+
+    run(b, {define: mockDefine});
+    assert.equal(test(), 'Test!');
+  });
+
+  it('should expose variable with --browser-global', async function() {
+    let b = await bundle(__dirname + '/integration/entry-point/index.js', {
+      browserGlobal: 'testing'
+    });
+
+    const ctx = run(b, null, {require: false});
+    assert.equal(ctx.window.testing(), 'Test!');
+  });
+});
+
+it('should expose same variable with --browser-global and RequireJS', async function() {
+  let b = await bundle(__dirname + '/integration/entry-point/index.js', {
+    browserGlobal: 'testing'
+  });
+  let test;
+  const mockDefine = function(f) {
+    test = f();
+  };
+  mockDefine.amd = true;
+
+  const ctx = run(b, {define: mockDefine}, {require: false});
+  assert.equal(ctx.window.testing, test);
 });

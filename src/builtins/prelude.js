@@ -7,11 +7,14 @@
 // orig method which is the require for previous bundles
 
 // eslint-disable-next-line no-global-assign
-require = (function (modules, cache, entry) {
+require = (function (modules, cache, entry, browserGlobal) {
   // Save the require from previous bundle to this closure if any
   var previousRequire = typeof require === "function" && require;
 
   function newRequire(name, jumped, hmrBundle) {
+  // Save the module from previous module or Node.js if any
+  var previousModule = typeof module === 'object' && module;
+
     if (!cache[name]) {
       if (!modules[name]) {
         // if we cannot find the module within our internal map or
@@ -43,6 +46,26 @@ require = (function (modules, cache, entry) {
       }
 
       modules[name][0].call(module.exports, localRequire, module, module.exports);
+
+      if (name === entry[entry.length - 1]) {
+        // Expose entry point to Node, AMD or browser globals
+        // Based on https://github.com/umdjs/umd/blob/master/templates/returnExportsGlobal.js
+        /* global define */
+        (function (root) {
+          if (typeof define === 'function' && define.amd) {
+            define(function () {
+              if (browserGlobal) {
+                root[browserGlobal] = module.exports;
+              }
+              return module.exports;
+            });
+          } else if (typeof previousModule === 'object' && previousModule.exports) {
+            previousModule.exports = module.exports;
+          } else {
+            root[browserGlobal] = module.exports;
+          }
+        })(typeof self !== 'undefined' ? self : this);
+      }
     }
 
     return cache[name].exports;

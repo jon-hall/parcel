@@ -212,7 +212,13 @@ class JSPackager extends Packager {
       entry.push(this.bundle.entryAsset.id);
     }
 
-    await this.dest.write('},{},' + JSON.stringify(entry) + ')');
+    await this.dest.write(
+      '},{},' +
+        JSON.stringify(entry) +
+        ', ' +
+        JSON.stringify(this.options.browserGlobal || null) +
+        ')'
+    );
     if (this.options.sourceMaps) {
       // Add source map url
       await this.dest.write(
