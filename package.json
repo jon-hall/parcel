@@ -64,7 +64,7 @@
     "tomlify-j0.4": "^3.0.0",
     "uglify-es": "^3.2.1",
     "v8-compile-cache": "^1.1.0",
-    "vue-component-compiler": "3.0.0",
+    "vue-component-compiler": "github:vuejs/vue-component-compiler",
     "worker-farm": "^1.5.2",
     "ws": "^4.0.0"
   },
