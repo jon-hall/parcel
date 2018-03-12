@@ -1,4 +1,3 @@
-const dbg = require('debug')('parcel:installPackage');
 const spawn = require('cross-spawn');
 const config = require('./config');
 const path = require('path');
@@ -15,10 +14,8 @@ async function install(dir, modules, installPeers = true) {
     };
 
     if (location && path.basename(location) === 'yarn.lock') {
-      dbg('yarn', ['add', ...modules, '--dev'], options);
       install = spawn('yarn', ['add', ...modules, '--dev'], options);
     } else {
-      dbg('npm', ['install', ...modules, '--save-dev'], options);
       install = spawn('npm', ['install', ...modules, '--save-dev'], options);
     }
 
@@ -67,22 +64,3 @@ async function installPeerDependencies(dir, name) {
 }
 
 module.exports = install;
-
-module.exports.sync = function(dir, name) {
-  let location = config.resolveSync(dir, ['yarn.lock', 'package.json']);
-
-  let install;
-  let options = {
-    cwd: location ? path.dirname(location) : dir,
-    stdio: 'inherit'
-  };
-
-  if (location && path.basename(location) === 'yarn.lock') {
-    dbg('yarn', ['add', name, '--dev'], options);
-    install = spawn.sync('yarn', ['add', name, '--dev'], options);
-  } else {
-    dbg('npm', ['install', name, '--save-dev'], options);
-    install = spawn.sync('npm', ['install', name, '--save-dev'], options);
-  }
-  return install;
-};

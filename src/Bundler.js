@@ -1,4 +1,3 @@
-const dbg = require('debug')('parcel:Bundler');
 const fs = require('./utils/fs');
 const Resolver = require('./Resolver');
 const Parser = require('./Parser');
@@ -13,7 +12,6 @@ const {EventEmitter} = require('events');
 const logger = require('./Logger');
 const PackagerRegistry = require('./packagers');
 const localRequire = require('./utils/localRequire');
-const localResolve = require('./utils/localRequire').localResolve;
 const config = require('./utils/config');
 const emoji = require('./utils/emoji');
 const loadEnv = require('./utils/env');
@@ -293,71 +291,7 @@ class Bundler extends EventEmitter {
   }
 
   async resolveAsset(name, parent) {
-    // if (!name.startsWith('/') && !name.startsWith('.') && !name.startsWith('_') && !Path.parse(name).ext) {
-    //   dbg('resolveAsset', {name, parent});
-    //   let res = await localResolve(name, parent);
-    //   dbg('resolveAsset:res', {name, parent, res});
-    // }
-    let isFile = (file, cb) => {
-      if (file === name || this.loadedAssets.has(file)) {
-        cb(null, true);
-      } else {
-        // localRequire(name, parent ? Path.parse(parent).dir : parent).then(
-        // try {
-        //   const ext = Path.parse(file).ext;
-        //   if (ext !== 'json') {
-        //     dbg('localResolve', {file, name, parent});
-        //   }
-        //   localResolve(file, parent).then(
-        //     res => {
-        //       if (ext != 'json') {
-        //         dbg('localResolve:res', {file, name, parent, res});
-        //       }
-        //       // return cb(null, !(file instanceof Error))
-        //         fs.stat(res, function (err, stat) {
-        //           // dbg('localResolve:stat', {file, name, err, stat});
-        //           if (err && err.code === 'ENOENT') {
-        //             cb(null, false);
-        //           }
-        //           else if (err) {
-        //             // cb(err);
-        //             cb(null, false);
-        //           }
-        //           else {
-        //             cb(null, stat.isFile() || stat.isFIFO());
-        //           }
-        //         });
-        //     },
-        //     err => {
-        //       // dbg('localResolve:err', {file, name, err});
-        //       // console.log('TKTK');
-        //       // console.error(err);
-        //       return cb(null, false)
-        //     }
-        //   )
-        // } catch (e) {
-        //   dbg('localResolve:error', {name, parent});
-        //   console.log('TKTK err');
-        //   console.error(e);
-        //   return cb(null, false);
-        // }
-        fs.stat(file, function (err, stat) {
-          // dbg('localResolve:stat', {file, name, err, stat});
-          if (err && err.code === 'ENOENT') {
-            cb(null, false);
-          }
-          else if (err) {
-            cb(err);
-            // cb(null, false);
-          }
-          else {
-            cb(null, stat.isFile() || stat.isFIFO());
-          }
-        });
-      }
-    };
-
-    let {path, pkg} = await this.resolver.resolve(name, parent, {isFile});
+    let {path, pkg} = await this.resolver.resolve(name, parent);
     if (this.loadedAssets.has(path)) {
       return this.loadedAssets.get(path);
     }
@@ -450,15 +384,6 @@ class Bundler extends EventEmitter {
 
     // Mark the asset processed so we don't load it twice
     asset.processed = true;
-    let installDeps = await asset.install();
-
-    this.installed = this.installed || new Set();
-    for (let dep of installDeps) {
-      if (!this.installed.has(dep.name)) {
-        this.installed.add(dep.name);
-        localResolve(dep.name, asset.name);
-      }
-    }
 
     // First try the cache, otherwise load and compile in the background
     let startTime = Date.now();
@@ -480,6 +405,15 @@ class Bundler extends EventEmitter {
       let implicitDeps = await this.delegate.getImplicitDependencies(asset);
       if (implicitDeps) {
         dependencies = dependencies.concat(implicitDeps);
+      }
+    }
+
+    let seen = new Set();
+    for (let dep of dependencies) {
+      if (dep.install && !seen.has(dep.name+':'+asset.name)) {
+        seen = seen.add(dep.name+':'+asset.name);
+        let res = await localResolve(dep.name, asset.name);
+        res = res;
       }
     }
 
@@ -506,9 +440,12 @@ class Bundler extends EventEmitter {
             // so no need to load it. We map the name back to the parent asset so
             // that changing it triggers a recompile of the parent.
             this.watch(dep.name, asset);
-          } else if (!dep.install) {
+          } else {
             let assetDep = await this.resolveDep(asset, dep);
-            await this.loadAsset(assetDep);
+            if (assetDep) {
+              await this.loadAsset(assetDep);
+            }
+
             return assetDep;
           }
         }
@@ -641,7 +578,6 @@ class Bundler extends EventEmitter {
   }
 
   async onChange(path) {
-    dbg('onChange', path);
     let assets = this.watchedAssets.get(path);
     if (!assets || !assets.size) {
       return;
@@ -652,7 +588,6 @@ class Bundler extends EventEmitter {
 
     // Add the asset to the rebuild queue, and reset the timeout.
     for (let asset of assets) {
-      dbg('onChange:asset', asset.name);
       this.buildQueue.add(asset, true);
     }
 

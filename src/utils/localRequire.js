@@ -1,13 +1,13 @@
 const dbg = require('debug')('parcel:localRequire');
 const {dirname} = require('path');
 const resolve = require('resolve');
-const install = require('./installPackage').sync;
+const install = require('./installPackage');
 const Path = require('path');
 
 const cache = new Map();
 
 
-function localResolve(name, path, opts = {}, triedInstall = false) {
+async function localResolve(name, path, opts = {}, triedInstall = false) {
   let [base, version] = name.split('@');
   let dep = base.split('/')[0];
   let final = version ? `${dep}@${version}` : dep;
@@ -27,7 +27,7 @@ function localResolve(name, path, opts = {}, triedInstall = false) {
       if (e.code === 'MODULE_NOT_FOUND' && shouldInstall) {
         // dbg('localResolve:install', {name, path});
         dbg('localResolve:install', {name, path, dep, version, final});
-        install(path, final);
+        await install(path, [final]);
         return localResolve(name, path, opts, true);
       } else {
         if (ext == '') {
@@ -46,7 +46,7 @@ function localResolve(name, path, opts = {}, triedInstall = false) {
 
 async function localRequire(name, path, opts = {}) {
   dbg('localRequire', {name, path, opts});
-  let resolved = localResolve(name, path, opts);
+  let resolved = await localResolve(name, path, opts);
   if (resolved instanceof Error) {
     throw resolved;
   }

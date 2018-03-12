@@ -1,6 +1,3 @@
-const promisify = require('./utils/promisify');
-const resolve = require('browser-resolve');
-const resolveAsync = promisify(resolve);
 const builtins = require('./builtins');
 const path = require('path');
 const glob = require('glob');
@@ -29,18 +26,10 @@ class Resolver {
     this.rootPackage = null;
   }
 
-  async resolve(filename, parent, options = {}) {
-    var resolved = await this.resolveInternal(filename, parent, options, resolveAsync);
-    return this.saveCache(filename, parent, resolved);
-  }
+  async resolve(input, parent) {
+    let filename = input;
 
-  resolveSync(filename, parent, options = {}) {
-    var resolved = this.resolveInternal(filename, parent, options, resolve.sync);
-    return this.saveCache(filename, parent, resolved);
-  }
-
-  resolveInternal(filename, parent, options, resolver) {
-    filename = filename.split('@')[0];
+    // Check the cache first
     let key = this.getCacheKey(filename, parent);
     if (this.cache.has(key)) {
       return this.cache.get(key);
@@ -59,29 +48,37 @@ class Resolver {
       extensions = [parentExt, ...extensions.filter(ext => ext !== parentExt)];
     }
 
-    return resolver(filename, Object.assign({
-        filename: parent,
-        paths: this.options.paths,
-        modules: builtins,
-        extensions: extensions,
-        packageFilter(pkg, pkgfile) {
-          // Expose the path to the package.json file
-          pkg.pkgfile = pkgfile;
+    extensions.unshift('');
 
-          // libraries like d3.js specifies node.js specific files in the "main" which breaks the build
-          // we use the "module" or "jsnext:main" field to get the full dependency tree if available
-          const main = [pkg.module, pkg['jsnext:main']].find(
-            entry => typeof entry === 'string'
-          );
+    let dir = parent ? path.dirname(parent) : process.cwd();
 
-          if (main) {
-            pkg.main = main;
-          }
+    // If this isn't the entrypoint, resolve the input file to an absolute path
+    if (parent) {
+      filename = this.resolveFilename(filename, dir);
+    }
 
-          return pkg;
-        }
-      },
-      options));
+    // Resolve aliases in the parent module for this file.
+    filename = await this.loadAlias(filename, dir);
+
+    let resolved;
+    if (path.isAbsolute(filename)) {
+      // load as file
+      resolved = await this.loadRelative(filename, extensions);
+    } else {
+      // load node_modules
+      resolved = await this.loadNodeModules(filename, dir, extensions);
+    }
+
+    if (!resolved) {
+      let err = new Error(
+        "Cannot find module '" + input + "' from '" + dir + "'"
+      );
+      err.code = 'MODULE_NOT_FOUND';
+      throw err;
+    }
+
+    this.cache.set(key, resolved);
+    return resolved;
   }
 
   getCacheKey(filename, parent) {
